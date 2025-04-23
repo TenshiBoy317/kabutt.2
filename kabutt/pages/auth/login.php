@@ -2,6 +2,7 @@
 require_once __DIR__ . '/../../includes/header.php';
 require_once __DIR__ . '/../../includes/auth.php';
 
+
 $auth = new Auth();
 $errors = [];
 
@@ -23,9 +24,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user) {
             // Redirigir según el rol
             if ($user['role'] === 'admin') {
-                header("Location: /?page=admin/dashboard");
+                header("Location: /kabutt/?page=admin/dashboard");
             } else {
-                header("Location: /");
+                header("Location: /kabutt/");
             }
             exit;
         } else {

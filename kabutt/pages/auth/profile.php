@@ -10,6 +10,7 @@ if (!$auth->isLoggedIn()) {
     exit;
 }
 
+$baseUrl = '/kabutt/';
 $userObj = new User();
 $orderObj = new Order();
 $user = $userObj->getUserById($_SESSION['user_id']);
@@ -47,9 +48,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <nav class="profile-nav">
-                <a href="/?page=profile" class="active"><i class="fas fa-user"></i> Mi Perfil</a>
-                <a href="/?page=orders"><i class="fas fa-shopping-bag"></i> Mis Pedidos</a>
-                <a href="/logout.php"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                <a href="<?= $baseUrl?>?page=profile" class="active"><i class="fas fa-user"></i> Mi Perfil</a>
+                <a href="<?= $baseUrl?>?page=orders"><i class="fas fa-shopping-bag"></i> Mis Pedidos</a>
+                <a href="<?= $baseUrl?>logout.php"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
             </nav>
         </div>
 

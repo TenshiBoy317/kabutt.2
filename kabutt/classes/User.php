@@ -117,7 +117,15 @@ class User {
 
         return ['success' => $success, 'errors' => $success ? [] : ['Error al actualizar el perfil']];
     }
-
+    /**
+     * Obtiene el conteo total de usuarios
+     */
+    public function getTotalUsersCount() {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM users");
+        $stmt->execute();
+        $result = $stmt->fetch();
+        return $result['total'];
+    }
     public function getAllUsers() {
         $stmt = $this->db->prepare("SELECT id, username, email, role, created_at FROM users ORDER BY created_at DESC");
         $stmt->execute();

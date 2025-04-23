@@ -1,13 +1,24 @@
 <?php
+require_once __DIR__ . '/../../../includes/auth.php';
 require_once __DIR__ . '/../../../includes/admin_header.php';
+
+// Verificar autenticación y rol de admin
+$auth = new Auth();
+
+if (!$auth->isLoggedIn() || !$auth->isAdmin()) {
+    header("Location: /kabutt/?page=login");
+    exit();
+}
+
 require_once __DIR__ . '/../../../classes/Product.php';
 require_once __DIR__ . '/../../../functions/validations.php';
 
+$baseUrl = '/kabutt/';
 $productObj = new Product();
 $errors = [];
 
 if (!isset($_GET['id']) || !$product = $productObj->getProductById($_GET['id'])) {
-    header("Location: /?page=admin/products");
+    header("Location: /kabutt/?page=admin/products");
     exit;
 }
 
@@ -83,7 +94,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         if ($success) {
             $_SESSION['success_message'] = 'Producto actualizado correctamente';
-            header("Location: /?page=admin/products/edit&id=" . $product['id']);
+            header("Location: /kabutt/?page=admin/products/edit&id=" . $product['id']);
             exit;
         } else {
             $errors[] = 'Error al actualizar el producto';
@@ -157,13 +168,13 @@ $product = $productObj->getProductById($product['id']);
                 <div class="product-images-grid">
                     <?php foreach ($product['images'] as $image): ?>
                         <div class="image-item <?= $image['is_main'] ? 'main-image' : '' ?>">
-                            <img src="/assets/uploads/<?= $image['image_path'] ?>" alt="Imagen de producto">
+                            <img src="<?= $baseUrl ?>/assets/uploads/products/<?= $image['image_path'] ?>" alt="Imagen de producto">
                             <div class="image-actions">
                                 <label>
                                     <input type="radio" name="main_image" value="<?= $image['id'] ?>" <?= $image['is_main'] ? 'checked' : '' ?>>
                                     Principal
                                 </label>
-                                <a href="/admin/products/delete_image?id=<?= $image['id'] ?>" class="btn btn-sm btn-delete" onclick="return confirm('¿Eliminar esta imagen?')">Eliminar</a>
+                                <a href="<?= $baseUrl ?>admin/products/delete_image?id=<?= $image['id'] ?>" class="btn btn-sm btn-delete" onclick="return confirm('¿Eliminar esta imagen?')">Eliminar</a>
                             </div>
                         </div>
                     <?php endforeach; ?>
@@ -202,7 +213,7 @@ $product = $productObj->getProductById($product['id']);
                             <input type="text" name="existing_variant_sku[]" value="<?= $variant['sku'] ?? '' ?>">
                         </div>
 
-                        <a href="/admin/products/delete_variant?id=<?= $variant['id'] ?>" class="btn btn-sm btn-delete" onclick="return confirm('¿Eliminar esta variante?')">Eliminar</a>
+                        <a href="<?= $baseUrl ?>admin/products/delete_variant?id=<?= $variant['id'] ?>" class="btn btn-sm btn-delete" onclick="return confirm('¿Eliminar esta variante?')">Eliminar</a>
                     </div>
                 <?php endforeach; ?>
 
@@ -239,7 +250,7 @@ $product = $productObj->getProductById($product['id']);
 
             <div class="form-actions">
                 <button type="submit" class="btn">Guardar Cambios</button>
-                <a href="/?page=admin/products" class="btn btn-outline">Cancelar</a>
+                <a href="<?= $baseUrl ?>?page=admin/products" class="btn btn-outline">Cancelar</a>
             </div>
         </form>
     </div>

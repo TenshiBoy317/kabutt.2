@@ -130,29 +130,42 @@ class Order {
 
         // Filtros
         if (!empty($filters['status'])) {
-            $query .= " AND o.status = ?";
-            $params[] = $filters['status'];
+            $query .= " AND o.status = :status";
+            $params[':status'] = $filters['status'];
         }
 
         if (!empty($filters['date_from'])) {
-            $query .= " AND o.created_at >= ?";
-            $params[] = $filters['date_from'];
+            $query .= " AND o.created_at >= :date_from";
+            $params[':date_from'] = $filters['date_from'];
         }
 
         if (!empty($filters['date_to'])) {
-            $query .= " AND o.created_at <= ?";
-            $params[] = $filters['date_to'];
+            $query .= " AND o.created_at <= :date_to";
+            $params[':date_to'] = $filters['date_to'];
         }
 
         $query .= " ORDER BY o.created_at DESC";
 
+        // Paginación
         if (!empty($filters['limit'])) {
-            $query .= " LIMIT ?";
-            $params[] = (int)$filters['limit'];
+            $query .= " LIMIT :limit";
+            $params[':limit'] = (int)$filters['limit'];
+
+            if (!empty($filters['offset'])) {
+                $query .= " OFFSET :offset";
+                $params[':offset'] = (int)$filters['offset'];
+            }
         }
 
         $stmt = $this->db->prepare($query);
-        $stmt->execute($params);
+
+        // Bind parameters
+        foreach ($params as $key => $value) {
+            $paramType = is_int($value) ? PDO::PARAM_INT : PDO::PARAM_STR;
+            $stmt->bindValue($key, $value, $paramType);
+        }
+
+        $stmt->execute();
         return $stmt->fetchAll();
     }
 
@@ -163,6 +176,45 @@ class Order {
             WHERE id = ?
         ");
         return $stmt->execute([$status, $orderId]);
+    }
+
+    /**
+     * Obtiene el conteo de pedidos por estado
+     * @param string $status Estado del pedido
+     * @return int Número de pedidos con ese estado
+     */
+    public function getOrdersCountByStatus($status) {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM orders WHERE status = ?");
+        $stmt->execute([$status]);
+        $result = $stmt->fetch();
+        return (int)$result['total'];
+    }
+
+    /**
+     * Obtiene las ventas mensuales
+     * @return float Total de ventas del último mes
+     */
+    public function getMonthlySales() {
+        $stmt = $this->db->prepare("
+            SELECT SUM(total) as total 
+            FROM orders 
+            WHERE status != 'cancelado' 
+            AND created_at >= DATE_SUB(NOW(), INTERVAL 1 MONTH)
+        ");
+        $stmt->execute();
+        $result = $stmt->fetch();
+        return (float)($result['total'] ?? 0);
+    }
+
+    /**
+     * Obtiene el total de pedidos
+     * @return int Número total de pedidos
+     */
+    public function getTotalOrdersCount() {
+        $stmt = $this->db->prepare("SELECT COUNT(*) as total FROM orders");
+        $stmt->execute();
+        $result = $stmt->fetch();
+        return (int)$result['total'];
     }
 }
 ?>

@@ -1,5 +1,16 @@
 <?php
+require_once __DIR__ . '/../../../includes/auth.php';
 require_once __DIR__ . '/../../../includes/admin_header.php';
+
+$baseUrl = '/kabutt/';
+// Verificar autenticación y rol de admin
+$auth = new Auth();
+
+if (!$auth->isLoggedIn() || !$auth->isAdmin()) {
+    header("Location: /kabutt/?page=login");
+    exit();
+}
+
 require_once __DIR__ . '/../../../classes/User.php';
 
 $userObj = new User();
@@ -17,7 +28,7 @@ $totalPages = ceil($totalUsers / $itemsPerPage);
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role'])) {
     if ($userObj->updateUserRole($_POST['user_id'], $_POST['role'])) {
         $_SESSION['success_message'] = 'Rol de usuario actualizado correctamente';
-        header("Location: /?page=admin/users");
+        header("Location: /kabutt/?page=admin/users");
         exit;
     } else {
         $errors[] = 'Error al actualizar el rol del usuario';
@@ -66,7 +77,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['ro
                         </td>
                         <td><?= date('d/m/Y', strtotime($user['created_at'])) ?></td>
                         <td>
-                            <a href="/?page=admin/users/view&id=<?= $user['id'] ?>" class="btn btn-sm">Ver</a>
+                            <a href="<?= $baseUrl?>?page=admin/users/view&id=<?= $user['id'] ?>" class="btn btn-sm">Ver</a>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -77,15 +88,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['ro
         <?php if ($totalPages > 1): ?>
             <div class="pagination">
                 <?php if ($currentPage > 1): ?>
-                    <a href="?page=admin/users&page=<?= $currentPage - 1 ?>" class="page-link">&laquo; Anterior</a>
+                    <a href="<?= $baseUrl?>?page=admin/users&page=<?= $currentPage - 1 ?>" class="page-link">&laquo; Anterior</a>
                 <?php endif; ?>
 
                 <?php for ($i = 1; $i <= $totalPages; $i++): ?>
-                    <a href="?page=admin/users&page=<?= $i ?>" class="page-link <?= $i === $currentPage ? 'active' : '' ?>"><?= $i ?></a>
+                    <a href="<?= $baseUrl?>?page=admin/users&page=<?= $i ?>" class="page-link <?= $i === $currentPage ? 'active' : '' ?>"><?= $i ?></a>
                 <?php endfor; ?>
 
                 <?php if ($currentPage < $totalPages): ?>
-                    <a href="?page=admin/users&page=<?= $currentPage + 1 ?>" class="page-link">Siguiente &raquo;</a>
+                    <a href="<?= $baseUrl?>?page=admin/users&page=<?= $currentPage + 1 ?>" class="page-link">Siguiente &raquo;</a>
                 <?php endif; ?>
             </div>
         <?php endif; ?>

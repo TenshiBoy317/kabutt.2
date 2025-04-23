@@ -1,5 +1,15 @@
 <?php
+require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../includes/admin_header.php';
+
+// Verificar autenticación y rol de admin
+$auth = new Auth();
+
+if (!$auth->isLoggedIn() || !$auth->isAdmin()) {
+    header("Location: /kabutt/?page=login");
+    exit();
+}
+
 require_once __DIR__ . '/../../classes/Order.php';
 require_once __DIR__ . '/../../classes/Product.php';
 require_once __DIR__ . '/../../classes/User.php';
@@ -7,6 +17,7 @@ require_once __DIR__ . '/../../classes/User.php';
 $orderObj = new Order();
 $productObj = new Product();
 $userObj = new User();
+$baseUrl = '/kabutt/';
 
 // Obtener estadísticas
 $stats = [
@@ -31,7 +42,7 @@ $recentOrders = $orderObj->getAllOrders(['limit' => 5]);
                 <div class="stat-info">
                     <h3>Productos</h3>
                     <p><?= $stats['total_products'] ?></p>
-                    <a href="/?page=admin/products">Gestionar</a>
+                    <a href="<?= $baseUrl ?>?page=admin/products">Gestionar</a>
                 </div>
             </div>
 
@@ -42,7 +53,7 @@ $recentOrders = $orderObj->getAllOrders(['limit' => 5]);
                 <div class="stat-info">
                     <h3>Usuarios</h3>
                     <p><?= $stats['total_users'] ?></p>
-                    <a href="/?page=admin/users">Gestionar</a>
+                    <a href="<?= $baseUrl ?>?page=admin/users">Gestionar</a>
                 </div>
             </div>
 
@@ -53,7 +64,7 @@ $recentOrders = $orderObj->getAllOrders(['limit' => 5]);
                 <div class="stat-info">
                     <h3>Pedidos Pendientes</h3>
                     <p><?= $stats['pending_orders'] ?></p>
-                    <a href="/?page=admin/orders">Gestionar</a>
+                    <a href="<?= $baseUrl ?>?page=admin/orders">Gestionar</a>
                 </div>
             </div>
 
@@ -64,7 +75,7 @@ $recentOrders = $orderObj->getAllOrders(['limit' => 5]);
                 <div class="stat-info">
                     <h3>Ventas Mensuales</h3>
                     <p>S/ <?= number_format($stats['monthly_sales'], 2) ?></p>
-                    <a href="/?page=admin/orders">Ver detalles</a>
+                    <a href="<?= $baseUrl ?>?page=admin/orders">Ver detalles</a>
                 </div>
             </div>
         </div>
@@ -100,7 +111,7 @@ $recentOrders = $orderObj->getAllOrders(['limit' => 5]);
                                 </td>
                                 <td><?= date('d/m/Y', strtotime($order['created_at'])) ?></td>
                                 <td>
-                                    <a href="/?page=admin/orders/view&id=<?= $order['id'] ?>" class="btn btn-sm">Ver</a>
+                                    <a href="<?= $baseUrl ?>?page=admin/orders/view&id=<?= $order['id'] ?>" class="btn btn-sm">Ver</a>
                                 </td>
                             </tr>
                         <?php endforeach; ?>
@@ -112,22 +123,22 @@ $recentOrders = $orderObj->getAllOrders(['limit' => 5]);
             <section class="quick-actions">
                 <h2>Acciones Rápidas</h2>
                 <div class="actions-grid">
-                    <a href="/?page=admin/products/add" class="action-card">
+                    <a href="<?= $baseUrl ?>?page=admin/products/add" class="action-card">
                         <i class="fas fa-plus"></i>
                         <span>Añadir Producto</span>
                     </a>
 
-                    <a href="/?page=admin/orders" class="action-card">
+                    <a href="<?= $baseUrl ?>?page=admin/orders" class="action-card">
                         <i class="fas fa-clipboard-list"></i>
                         <span>Gestionar Pedidos</span>
                     </a>
 
-                    <a href="/?page=admin/users" class="action-card">
+                    <a href="<?= $baseUrl ?>?page=admin/users" class="action-card">
                         <i class="fas fa-user-cog"></i>
                         <span>Gestionar Usuarios</span>
                     </a>
 
-                    <a href="/?page=admin/reports" class="action-card">
+                    <a href="<?= $baseUrl ?>?page=admin/reports" class="action-card">
                         <i class="fas fa-chart-pie"></i>
                         <span>Ver Reportes</span>
                     </a>

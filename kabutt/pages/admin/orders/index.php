@@ -1,5 +1,15 @@
 <?php
+require_once __DIR__ . '/../../../includes/auth.php';
 require_once __DIR__ . '/../../../includes/admin_header.php';
+
+// Verificar autenticación y rol de admin
+$auth = new Auth();
+
+if (!$auth->isLoggedIn() || !$auth->isAdmin()) {
+    header("Location: /kabutt/?page=login");
+    exit();
+}
+
 require_once __DIR__ . '/../../../classes/Order.php';
 
 $orderObj = new Order();
