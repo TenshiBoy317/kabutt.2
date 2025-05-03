@@ -1,62 +1,77 @@
 <?php
 require_once __DIR__ . '/../../includes/header.php';
+require_once __DIR__ . '/../../includes/auth.php';
 require_once __DIR__ . '/../../classes/Cart.php';
 require_once __DIR__ . '/../../classes/Order.php';
-require_once __DIR__ . '/../../includes/auth.php';
+require_once __DIR__ . '/../../classes/User.php';
 
 $auth = new Auth();
 if (!$auth->isLoggedIn()) {
-    header("Location: /?page=login");
+    header("Location: /auth/login.php?redirect=checkout");
     exit;
 }
 
-$cart = new Cart();
+$baseUrl = '/kabutt/';
+$cartObj = new Cart();
 $orderObj = new Order();
-$user = $auth->getUser();
-$cartItems = $cart->getCartItems();
-$subtotal = $cart->getCartTotal();
+$userObj = new User();
 
-$errors = [];
+// Obtener datos del usuario
+$user = $userObj->getUserById($_SESSION['user_id']);
 
-if (empty($cartItems)) {
-    header("Location: /?page=cart");
+// Obtener el carrito del usuario
+$cart = $cartObj->getUserCart($_SESSION['user_id']);
+
+if (empty($cart['items'])) {
+    header("Location: /cart");
     exit;
 }
 
+// Calcular subtotal
+$subtotal = 0;
+$cartItems = [];
+foreach ($cart['items'] as $item) {
+    $subtotal += $item['price'] * $item['quantity'];
+    $cartItems[] = $item;
+}
+
+// Procesar el pago
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $shippingData = [
-        'address' => trim($_POST['address']),
-        'phone' => trim($_POST['phone'])
-    ];
+    $paymentMethod = $_POST['payment_method'] ?? '';
+    $shippingAddress = $_POST['shipping_address'] ?? '';
+    $contactPhone = $_POST['contact_phone'] ?? '';
 
-    $paymentMethod = $_POST['payment_method'];
-
-    // Validar datos
-    if (empty($shippingData['address'])) {
-        $errors[] = "La dirección de envío es requerida";
+    // Validaciones
+    $errors = [];
+    if (empty($paymentMethod)) {
+        $errors[] = 'Seleccione un método de pago';
     }
-
-    if (empty($shippingData['phone'])) {
-        $errors[] = "El teléfono de contacto es requerido";
+    if (empty($shippingAddress)) {
+        $errors[] = 'Ingrese una dirección de envío';
     }
-
-    if (empty($paymentMethod) || !in_array($paymentMethod, ['tarjeta', 'efectivo', 'yape', 'plin'])) {
-        $errors[] = "Seleccione un método de pago válido";
+    if (empty($contactPhone)) {
+        $errors[] = 'Ingrese un número de contacto';
     }
 
     if (empty($errors)) {
-        // Crear orden
-        $orderId = $orderObj->createOrder($_SESSION['user_id'], $cartItems, $shippingData, $paymentMethod);
+        // Crear la orden
+        $orderId = $orderObj->createOrder([
+            'user_id' => $_SESSION['user_id'],
+            'total' => $subtotal,
+            'payment_method' => $paymentMethod,
+            'shipping_address' => $shippingAddress,
+            'contact_phone' => $contactPhone
+        ], $cart['items']);
 
         if ($orderId) {
-            // Vaciar carrito
-            $cart->clearCart();
+            // Vaciar el carrito
+            $cartObj->clearCart($cart['id']);
 
-            // Redirigir a la página de confirmación
-            header("Location: /?page=order_confirmation&id=$orderId");
+            // Redirigir a confirmación
+            header("Location: /order/confirm.php?id=".$orderId);
             exit;
         } else {
-            $errors[] = "Error al procesar la orden. Por favor, inténtelo de nuevo.";
+            $errors[] = 'Error al procesar el pedido';
         }
     }
 }
@@ -74,75 +89,78 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php endif; ?>
 
         <form method="post" class="checkout-form">
-            <div class="form-group">
-                <label for="first_name">Nombres</label>
-                <input type="text" id="first_name" value="<?= htmlspecialchars($user['first_name']) ?>" readonly>
+            <div class="form-section">
+                <h2>Información de Envío</h2>
+
+                <div class="form-group">
+                    <label for="first_name">Nombres</label>
+                    <input type="text" id="first_name" value="<?= htmlspecialchars($user['first_name'] ?? '') ?>" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="last_name">Apellidos</label>
+                    <input type="text" id="last_name" value="<?= htmlspecialchars($user['last_name'] ?? '') ?>" readonly>
+                </div>
+
+                <div class="form-group">
+                    <label for="shipping_address">Dirección de Envío</label>
+                    <textarea id="shipping_address" name="shipping_address" required><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
+                </div>
+
+                <div class="form-group">
+                    <label for="contact_phone">Teléfono de Contacto</label>
+                    <input type="text" id="contact_phone" name="contact_phone" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
+                </div>
             </div>
 
-            <div class="form-group">
-                <label for="last_name">Apellidos</label>
-                <input type="text" id="last_name" value="<?= htmlspecialchars($user['last_name']) ?>" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="email">Correo Electrónico</label>
-                <input type="email" id="email" value="<?= htmlspecialchars($user['email']) ?>" readonly>
-            </div>
-
-            <div class="form-group">
-                <label for="address">Dirección de Envío</label>
-                <textarea id="address" name="address" required><?= htmlspecialchars($user['address'] ?? '') ?></textarea>
-            </div>
-
-            <div class="form-group">
-                <label for="phone">Teléfono de Contacto</label>
-                <input type="text" id="phone" name="phone" value="<?= htmlspecialchars($user['phone'] ?? '') ?>" required>
-            </div>
-
-            <div class="payment-methods">
+            <div class="form-section">
                 <h2>Método de Pago</h2>
 
-                <div class="payment-method">
-                    <input type="radio" id="payment_card" name="payment_method" value="tarjeta" required>
-                    <label for="payment_card">Tarjeta de Crédito/Débito</label>
-                </div>
+                <div class="payment-methods">
+                    <div class="payment-method">
+                        <input type="radio" id="payment_card" name="payment_method" value="tarjeta" required>
+                        <label for="payment_card">Tarjeta de Crédito/Débito</label>
+                    </div>
 
-                <div class="payment-method">
-                    <input type="radio" id="payment_cash" name="payment_method" value="efectivo">
-                    <label for="payment_cash">Efectivo al recibir</label>
-                </div>
+                    <div class="payment-method">
+                        <input type="radio" id="payment_cash" name="payment_method" value="efectivo">
+                        <label for="payment_cash">Efectivo al recibir</label>
+                    </div>
 
-                <div class="payment-method">
-                    <input type="radio" id="payment_yape" name="payment_method" value="yape">
-                    <label for="payment_yape">Yape</label>
-                </div>
+                    <div class="payment-method">
+                        <input type="radio" id="payment_yape" name="payment_method" value="yape">
+                        <label for="payment_yape">Yape</label>
+                    </div>
 
-                <div class="payment-method">
-                    <input type="radio" id="payment_plin" name="payment_method" value="plin">
-                    <label for="payment_plin">Plin</label>
+                    <div class="payment-method">
+                        <input type="radio" id="payment_plin" name="payment_method" value="plin">
+                        <label for="payment_plin">Plin</label>
+                    </div>
                 </div>
             </div>
 
-            <div class="order-summary">
+            <div class="form-section">
                 <h2>Resumen de Pedido</h2>
 
-                <?php foreach ($cartItems as $item): ?>
-                    <div class="order-summary-item">
-                        <div>
-                            <h4><?= htmlspecialchars($item['name']) ?></h4>
-                            <p>Talla: <?= $item['size'] ?> | Color: <?= $item['color'] ?></p>
-                            <p>Cantidad: <?= $item['quantity'] ?></p>
+                <div class="order-summary-items">
+                    <?php foreach ($cartItems as $item): ?>
+                        <div class="order-item">
+                            <div class="item-info">
+                                <h4><?= htmlspecialchars($item['product_name'] ?? $item['name']) ?></h4>
+                                <p>Talla: <?= $item['size'] ?> | Color: <?= $item['color'] ?></p>
+                                <p>Cantidad: <?= $item['quantity'] ?></p>
+                            </div>
+                            <span class="item-price">S/ <?= number_format(($item['price'] * $item['quantity']), 2) ?></span>
                         </div>
-                        <span>S/ <?= number_format($item['price'] * $item['quantity'], 2) ?></span>
-                    </div>
-                <?php endforeach; ?>
+                    <?php endforeach; ?>
+                </div>
 
-                <div class="order-summary-total">
+                <div class="order-total">
                     <span>Total:</span>
                     <span>S/ <?= number_format($subtotal, 2) ?></span>
                 </div>
 
-                <button type="submit" class="btn btn-block">Confirmar Pedido</button>
+                <button type="submit" class="btn btn-primary btn-block">Confirmar Pedido</button>
             </div>
         </form>
     </div>

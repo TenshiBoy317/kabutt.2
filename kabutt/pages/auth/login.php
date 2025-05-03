@@ -24,7 +24,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($user) {
             // Redirigir según el rol
             if ($user['role'] === 'admin') {
-                header("Location: /kabutt/?page=admin/dashboard");
+                header("Location: /kabutt/?page=admin/dashboard.php");
             } else {
                 header("Location: /kabutt/");
             }

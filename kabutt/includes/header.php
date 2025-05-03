@@ -29,7 +29,7 @@ $baseUrl = '/kabutt/'; // Cambia esto si tu app está en un subdirectorio ej. '/
             <?php if ($auth->isLoggedIn()): ?>
                 <a href="<?= $baseUrl ?>?page=profile" class="nav-link <?= $currentPage === 'profile' ? 'active' : '' ?>"><i class="fas fa-user"></i></a>
                 <a href="<?= $baseUrl ?>?page=cart" class="nav-link <?= $currentPage === 'cart' ? 'active' : '' ?>"><i class="fas fa-shopping-cart"></i></a>
-                <a href="<?= $baseUrl ?>logout.php" class="nav-link">Cerrar Sesión</a>
+                <a href="<?= $baseUrl ?>?logout.php" class="nav-link">Cerrar Sesión</a>
             <?php else: ?>
                 <a href="<?= $baseUrl ?>?page=login" class="nav-link <?= $currentPage === 'login' ? 'active' : '' ?>">Login</a>
                 <a href="<?= $baseUrl ?>?page=register" class="nav-link <?= $currentPage === 'register' ? 'active' : '' ?>">Registro</a>

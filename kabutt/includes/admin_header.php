@@ -28,7 +28,7 @@ $currentPage = basename($_SERVER['PHP_SELF']);
             <div class="container">
                 <div class="admin-user">
                     <span><?= htmlspecialchars($_SESSION['username']) ?></span>
-                    <a href="<?= $baseUrl ?>/logout.php" class="btn btn-sm btn-outline">Cerrar Sesión</a>
+                    <a href="<?= $baseUrl ?>/pages/logout.php" class="btn btn-sm btn-outline">Cerrar Sesión</a>
                 </div>
             </div>
         </header>

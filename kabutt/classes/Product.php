@@ -567,4 +567,27 @@ class Product {
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN);
     }
+
+    public function getRelatedProducts($productId, $limit = 4) {
+        // Obtener la categoría del producto actual
+        $product = $this->getProductById($productId);
+        if (!$product) return [];
+
+        // Consulta para obtener productos de la misma categoría (excluyendo el actual)
+        $stmt = $this->db->prepare("
+            SELECT p.*, 
+                   (SELECT image_path FROM product_images WHERE product_id = p.id AND is_main = 1 LIMIT 1) as main_image
+            FROM products p
+            WHERE p.category = :category AND p.id != :productId
+            LIMIT :limit
+        ");
+
+        $stmt->bindValue(':category', $product['category'], PDO::PARAM_STR);
+        $stmt->bindValue(':productId', $productId, PDO::PARAM_INT);
+        $stmt->bindValue(':limit', $limit, PDO::PARAM_INT);
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    }
 }

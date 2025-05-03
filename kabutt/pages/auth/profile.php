@@ -6,7 +6,7 @@ require_once __DIR__ . '/../../classes/Order.php';
 
 $auth = new Auth();
 if (!$auth->isLoggedIn()) {
-    header("Location: /?page=login");
+    header("Location: /auth/login.php");
     exit;
 }
 
@@ -29,8 +29,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $result = $userObj->updateProfile($_SESSION['user_id'], $updateData);
 
     if ($result['success']) {
-        // Recargar datos del usuario
-        $user = $userObj->getUserById($_SESSION['user_id']);
+        // Actualizar datos de sesión
+        $_SESSION['user_first_name'] = $updateData['first_name'];
+        $_SESSION['user_last_name'] = $updateData['last_name'];
+        header("Location: ".$baseUrl."?page=profile&success=1");
+        exit;
     } else {
         $errors = $result['errors'];
     }
@@ -48,9 +51,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
 
             <nav class="profile-nav">
-                <a href="<?= $baseUrl?>?page=profile" class="active"><i class="fas fa-user"></i> Mi Perfil</a>
-                <a href="<?= $baseUrl?>?page=orders"><i class="fas fa-shopping-bag"></i> Mis Pedidos</a>
-                <a href="<?= $baseUrl?>logout.php"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
+                <a href="<?= $baseUrl ?>?page=profile" class="active"><i class="fas fa-user"></i> Mi Perfil</a>
+                <a href="<?= $baseUrl ?>order/orders.php"><i class="fas fa-shopping-bag"></i> Mis Pedidos</a>
+                <?php if ($user['role'] === 'admin'): ?>
+                    <a href="<?= $baseUrl?>admin/dashboard.php" class="btn btn-admin">
+                        <i class="fas fa-tachometer-alt"></i> Panel de Administración
+                    </a>
+                <?php endif; ?>
+                <a href="<?= $baseUrl ?>auth/logout.php"><i class="fas fa-sign-out-alt"></i> Cerrar Sesión</a>
             </nav>
         </div>
 
@@ -143,5 +151,49 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </div>
     </div>
+    <style>
+        .orders-actions {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .btn-outline {
+            background: transparent;
+            border: 1px solid #000;
+            color: #000;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            transition: all 0.3s ease;
+        }
+
+        .btn-outline:hover {
+            background: #000;
+            color: #fff;
+        }
+
+        .btn-admin {
+            background: inherit;
+            color: black;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .btn-admin:hover {
+            background: #3a5a9f;
+        }
+
+        .btn-admin i {
+            font-size: 16px;
+        }
+    </style>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
